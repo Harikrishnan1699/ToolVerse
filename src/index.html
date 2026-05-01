@@ -35,6 +35,42 @@
   <meta property="og:description" content="62+ client-side tools. PDF, image, video, dev, weather, crypto. Free forever." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="icons/icon-512x512.png" />
+
+  <!-- Speculation Rules — pre-render likely next pages for instant clicks -->
+  <script type="speculationrules">
+  {
+    "prerender": [
+      { "where": { "or": [
+        { "href_matches": "/pdf/*" },
+        { "href_matches": "/image/*" },
+        { "href_matches": "/dev/*" }
+      ]}, "eagerness": "moderate" }
+    ]
+  }
+  </script>
+
+  <!-- JSON-LD structured data — Google rich results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Toolverse",
+    "description": "All-in-one toolkit with 62+ client-side tools: PDF, image, audio/video, developer, calculators, QR, weather, crypto and more.",
+    "url": "https://harikrishnan1699.github.io/ToolVerse/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "browserRequirements": "Requires JavaScript. Modern browser.",
+    "featureList": [
+      "Merge / Split / Compress / Sign PDFs",
+      "Image compression, OCR, AI background removal",
+      "Video → GIF, video & audio compression",
+      "JSON formatter, Base64, hash, JWT, regex",
+      "Calculators, QR generator, password tools",
+      "Live currency, crypto and weather"
+    ]
+  }
+  </script>
 </head>
 <body class="antialiased">
   <app-root></app-root>

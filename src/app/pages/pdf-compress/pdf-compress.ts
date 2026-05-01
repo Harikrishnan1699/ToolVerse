@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
@@ -47,7 +47,14 @@ import { PageHeader } from '../../shared/page-header/page-header';
     </section>
   `,
 })
-export class PdfCompress {
+export class PdfCompress implements OnInit {
+  ngOnInit() {
+    const incoming = (window as any).__tvIncomingFiles as File[] | undefined;
+    if (incoming?.length) {
+      delete (window as any).__tvIncomingFiles;
+      this.pick(incoming);
+    }
+  }
   protected file = signal<File | null>(null);
   protected originalSize = signal('');
   protected busy = signal(false);

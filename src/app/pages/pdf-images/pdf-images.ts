@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
@@ -72,7 +72,14 @@ interface Img { file: File; url: string; }
     </section>
   `,
 })
-export class PdfImages {
+export class PdfImages implements OnInit {
+  ngOnInit() {
+    const incoming = (window as any).__tvIncomingFiles as File[] | undefined;
+    if (incoming?.length) {
+      delete (window as any).__tvIncomingFiles;
+      this.add(incoming);
+    }
+  }
   protected imgs = signal<Img[]>([]);
   protected pageSize = 'A4';
   protected orientation = 'P';

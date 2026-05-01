@@ -90,5 +90,20 @@ export const routes: Routes = [
   { path: 'ip', loadComponent: () => import('./pages/ip-lookup/ip-lookup').then(m => m.IpLookup), title: 'IP Lookup' },
   { path: 'holidays', loadComponent: () => import('./pages/holidays/holidays').then(m => m.Holidays), title: 'Holidays' },
 
+  // PWA handlers
+  { path: 'share', loadComponent: () => import('./pages/share-handler/share-handler').then(m => m.ShareHandler), title: 'Receiving share — Toolverse' },
+  { path: 'open', loadComponent: () => import('./pages/open-handler/open-handler').then(m => m.OpenHandler), title: 'Opening — Toolverse' },
+  { path: 'settings', loadComponent: () => import('./pages/settings/settings').then(m => m.Settings), title: 'Settings — Toolverse' },
+
+  // Hardware / sensor tools
+  { path: 'hw/nfc', loadComponent: () => import('./pages/hw-nfc/hw-nfc').then(m => m.HwNfc), title: 'NFC — Toolverse' },
+  { path: 'hw/speed', loadComponent: () => import('./pages/hw-speed/hw-speed').then(m => m.HwSpeed), title: 'GPS Speed — Toolverse' },
+  { path: 'hw/shake', loadComponent: () => import('./pages/hw-shake/hw-shake').then(m => m.HwShake), title: 'Shake Dice — Toolverse' },
+  { path: 'hw/p2p', loadComponent: () => import('./pages/hw-p2p/hw-p2p').then(m => m.HwP2p), title: 'P2P Transfer — Toolverse' },
+
+  // More dev / text
+  { path: 'dev/compress-text', loadComponent: () => import('./pages/dev-compress-text/dev-compress-text').then(m => m.DevCompressText), title: 'Gzip / Deflate — Toolverse' },
+  { path: 'text/translate', loadComponent: () => import('./pages/text-translate/text-translate').then(m => m.TextTranslate), title: 'Translator — Toolverse' },
+
   { path: '**', redirectTo: '' },
 ];

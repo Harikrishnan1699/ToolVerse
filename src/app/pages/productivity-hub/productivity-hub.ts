@@ -1,6 +1,9 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SectionHeader } from '../../shared/section-header/section-header';
+import { WakeLockService } from '../../shared/wake-lock.service';
+import { NotifyService } from '../../shared/notify.service';
+import { BadgeService } from '../../shared/badge.service';
 
 type Tab = 'pomodoro' | 'stopwatch' | 'timer' | 'todo' | 'notes' | 'random';
 
@@ -152,15 +155,25 @@ export class ProductivityHub implements OnInit, OnDestroy {
   protected pomoRunning = signal(false);
   protected pomoCycles = signal(0);
   private pomoTimer: any;
-  pomoStart() { this.pomoRunning.set(true); this.pomoTimer = setInterval(() => {
-    if (this.pomoLeft() <= 0) {
-      this.pomoCycles.update(n => n + 1);
-      this.pomoMode = this.pomoMode === 'work' ? 'break' : 'work';
-      this.pomoLeft.set((this.pomoMode === 'work' ? +this.pomoWork : +this.pomoBreak) * 60);
-      try { new Audio('data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAA==').play().catch(()=>{});} catch {}
-    } else this.pomoLeft.update(n => n - 1);
-  }, 1000); }
-  pomoStop() { clearInterval(this.pomoTimer); this.pomoRunning.set(false); }
+  pomoStart() {
+    this.pomoRunning.set(true);
+    this.wake.request();
+    this.notify.ensurePermission();
+    this.pomoTimer = setInterval(() => {
+      if (this.pomoLeft() <= 0) {
+        this.pomoCycles.update(n => n + 1);
+        const wasWork = this.pomoMode === 'work';
+        this.pomoMode = wasWork ? 'break' : 'work';
+        this.pomoLeft.set((this.pomoMode === 'work' ? +this.pomoWork : +this.pomoBreak) * 60);
+        this.notify.send(
+          wasWork ? '☕ Break time!' : '🎯 Focus time!',
+          wasWork ? `Take a ${this.pomoBreak}-minute break.` : `Start the next ${this.pomoWork}-minute focus block.`,
+          { tag: 'pomodoro' }
+        );
+      } else this.pomoLeft.update(n => n - 1);
+    }, 1000);
+  }
+  pomoStop() { clearInterval(this.pomoTimer); this.pomoRunning.set(false); this.wake.release(); }
   pomoReset() { this.pomoStop(); this.pomoMode = 'work'; this.pomoLeft.set(+this.pomoWork * 60); }
 
   // Stopwatch
@@ -168,8 +181,8 @@ export class ProductivityHub implements OnInit, OnDestroy {
   protected swRunning = signal(false);
   protected swLaps = signal<number[]>([]);
   private swTimer: any; private swStartAt = 0; private swAccum = 0;
-  swStart() { this.swStartAt = Date.now(); this.swRunning.set(true); this.swTimer = setInterval(() => this.swElapsed.set(this.swAccum + Date.now() - this.swStartAt), 31); }
-  swStop() { clearInterval(this.swTimer); this.swAccum = this.swElapsed(); this.swRunning.set(false); }
+  swStart() { this.swStartAt = Date.now(); this.swRunning.set(true); this.wake.request(); this.swTimer = setInterval(() => this.swElapsed.set(this.swAccum + Date.now() - this.swStartAt), 31); }
+  swStop() { clearInterval(this.swTimer); this.swAccum = this.swElapsed(); this.swRunning.set(false); this.wake.release(); }
   swLap() { this.swLaps.update(a => [this.swElapsed(), ...a]); }
   swReset() { this.swStop(); this.swElapsed.set(0); this.swAccum = 0; this.swLaps.set([]); }
 
@@ -180,13 +193,24 @@ export class ProductivityHub implements OnInit, OnDestroy {
   tmStart() {
     if (this.tmLeft() === 0) this.tmLeft.set(+this.tmH * 3600 + +this.tmM * 60 + +this.tmS);
     this.tmRunning.set(true);
+    this.wake.request();
+    this.notify.ensurePermission();
     this.tmTimer = setInterval(() => {
-      if (this.tmLeft() <= 0) { this.tmStop(); try { new Audio('data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAA==').play().catch(()=>{}); } catch {} return; }
+      if (this.tmLeft() <= 0) {
+        this.tmStop();
+        this.notify.send('⏰ Timer finished', 'Your countdown timer has hit zero.', { tag: 'timer' });
+        return;
+      }
       this.tmLeft.update(n => n - 1);
     }, 1000);
   }
-  tmStop() { clearInterval(this.tmTimer); this.tmRunning.set(false); }
+  tmStop() { clearInterval(this.tmTimer); this.tmRunning.set(false); this.wake.release(); }
   tmReset() { this.tmStop(); this.tmLeft.set(0); }
+
+  // Services
+  private wake = inject(WakeLockService);
+  private notify = inject(NotifyService);
+  private badge = inject(BadgeService);
 
   // Todo
   protected newTask = '';
@@ -194,12 +218,20 @@ export class ProductivityHub implements OnInit, OnDestroy {
   ngOnInit() {
     try { this.todos.set(JSON.parse(localStorage.getItem('tv.todos') ?? '[]')); } catch {}
     this.notes = localStorage.getItem('tv.notes') ?? '';
+    this.refreshBadge();
   }
   addTask() { if (!this.newTask.trim()) return; this.todos.update(t => [...t, { text: this.newTask.trim(), done: false }]); this.newTask = ''; this.saveTodos(); }
   removeTask(i: number) { this.todos.update(t => t.filter((_, idx) => idx !== i)); this.saveTodos(); }
   clearDone() { this.todos.update(t => t.filter(x => !x.done)); this.saveTodos(); }
-  saveTodos() { localStorage.setItem('tv.todos', JSON.stringify(this.todos())); }
+  saveTodos() {
+    localStorage.setItem('tv.todos', JSON.stringify(this.todos()));
+    this.refreshBadge();
+  }
   todoDone() { return this.todos().filter(t => t.done).length; }
+  private refreshBadge() {
+    const open = this.todos().filter(t => !t.done).length;
+    this.badge.set(open);
+  }
 
   // Notes
   protected notes = '';

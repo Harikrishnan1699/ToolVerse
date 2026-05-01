@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Dropzone } from '../../shared/dropzone/dropzone';
@@ -58,7 +58,15 @@ interface PdfFile { file: File; size: string; }
     </section>
   `,
 })
-export class PdfMerge {
+export class PdfMerge implements OnInit {
+  ngOnInit() {
+    const incoming = (window as any).__tvIncomingFiles as File[] | undefined;
+    if (incoming?.length) {
+      delete (window as any).__tvIncomingFiles;
+      this.addFiles(incoming);
+    }
+  }
+
   protected files = signal<PdfFile[]>([]);
   protected busy = signal(false);
   protected error = signal('');

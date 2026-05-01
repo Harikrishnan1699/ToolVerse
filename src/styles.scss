@@ -66,3 +66,28 @@ body {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
 .dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+// View Transitions API — smooth route fades
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: 0.25s;
+}
+
+// Respect users who prefer reduced motion
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// Low-power mode (set by BatteryService)
+.low-power {
+  .animate-float, .animate-spin-slow, .animate-gradient { animation: none !important; }
+}
+
+// Window controls overlay support — title bar safe area on desktop PWA
+@supports (padding: env(titlebar-area-x)) {
+  body { padding-top: env(titlebar-area-height, 0); }
+}

@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { saveAs } from 'file-saver';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { SectionHeader } from '../../shared/section-header/section-header';
+import { WebShareService } from '../../shared/web-share.service';
 
 @Component({
   selector: 'app-image-compress',
@@ -35,7 +36,12 @@ import { SectionHeader } from '../../shared/section-header/section-header';
           <div class="card p-4 space-y-3">
             <div class="flex items-center justify-between">
               <div class="text-xs font-semibold text-emerald-600 uppercase">Compressed ({{ resultSize() }} · saved {{ saved() }}%)</div>
-              <button class="btn-ghost text-xs px-2 py-1" (click)="download()" [disabled]="!resultUrl()">Download</button>
+              <div class="flex gap-1">
+                @if (share.supported) {
+                  <button class="btn-ghost text-xs px-2 py-1" (click)="shareIt()" [disabled]="!resultUrl()">Share</button>
+                }
+                <button class="btn-ghost text-xs px-2 py-1" (click)="download()" [disabled]="!resultUrl()">Download</button>
+              </div>
             </div>
             @if (resultUrl()) { <img [src]="resultUrl()" class="w-full rounded-xl border border-slate-200 dark:border-slate-700" /> }
           </div>
@@ -44,7 +50,17 @@ import { SectionHeader } from '../../shared/section-header/section-header';
     </section>
   `,
 })
-export class ImageCompress {
+export class ImageCompress implements OnInit {
+  protected share = inject(WebShareService);
+
+  ngOnInit() {
+    const incoming = (window as any).__tvIncomingFiles as File[] | undefined;
+    if (incoming?.length) {
+      delete (window as any).__tvIncomingFiles;
+      this.pick(incoming);
+    }
+  }
+
   protected file = signal<File | null>(null);
   protected url = signal('');
   protected resultUrl = signal('');
@@ -82,6 +98,12 @@ export class ImageCompress {
     if (!this.resultBlob) return;
     const ext = this.format.split('/')[1].replace('jpeg', 'jpg');
     saveAs(this.resultBlob, (this.file()?.name ?? 'image').replace(/\.[^.]+$/, '') + '-compressed.' + ext);
+  }
+  async shareIt() {
+    if (!this.resultBlob) return;
+    const ext = this.format.split('/')[1].replace('jpeg', 'jpg');
+    const name = (this.file()?.name ?? 'image').replace(/\.[^.]+$/, '') + '-compressed.' + ext;
+    await this.share.shareFile(new File([this.resultBlob], name, { type: this.format }));
   }
   private fmt(b: number) { return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB'; }
 }

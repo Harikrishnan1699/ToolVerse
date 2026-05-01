@@ -1,9 +1,11 @@
 import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { BroadcastService } from './broadcast.service';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private platformId = inject(PLATFORM_ID);
+  private broadcast = inject(BroadcastService);
   readonly isDark = signal(false);
 
   constructor() {
@@ -18,5 +20,6 @@ export class ThemeService {
     this.isDark.set(next);
     document.documentElement.classList.toggle('dark', next);
     localStorage.setItem('theme', next ? 'dark' : 'light');
+    this.broadcast.send('theme', next);
   }
 }

@@ -1,8 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import QRCode from 'qrcode';
 import { saveAs } from 'file-saver';
 import { SectionHeader } from '../../shared/section-header/section-header';
+import { WebShareService } from '../../shared/web-share.service';
 
 type Mode = 'text' | 'url' | 'wifi' | 'email' | 'sms' | 'vcard' | 'upi';
 
@@ -80,15 +82,24 @@ type Mode = 'text' | 'url' | 'wifi' | 'email' | 'sms' | 'vcard' | 'upi';
       <div class="card p-6 space-y-3 self-start sticky top-20">
         <div class="text-xs font-semibold text-slate-500 uppercase">QR Code</div>
         <canvas #out class="w-full rounded-xl border border-slate-200 dark:border-slate-700"></canvas>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <button class="btn-primary flex-1" (click)="download('png')">PNG</button>
           <button class="btn-secondary flex-1" (click)="download('svg')">SVG</button>
+          @if (share.supported) {
+            <button class="btn-secondary w-full" (click)="shareImage()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4m0 0L8 8m4-4v12"/></svg>
+              Share
+            </button>
+          }
         </div>
       </div>
     </section>
   `,
 })
-export class QrGenerator {
+export class QrGenerator implements OnInit {
+  protected share = inject(WebShareService);
+  private route = inject(ActivatedRoute);
+
   protected modes: { id: Mode; label: string }[] = [
     { id: 'text', label: 'Text' }, { id: 'url', label: 'URL' }, { id: 'wifi', label: 'WiFi' },
     { id: 'email', label: 'Email' }, { id: 'sms', label: 'SMS' }, { id: 'vcard', label: 'vCard' }, { id: 'upi', label: 'UPI' },
@@ -104,6 +115,19 @@ export class QrGenerator {
 
   ngAfterViewInit() { this.render(); }
   constructor() { setTimeout(() => this.render(), 100); }
+
+  ngOnInit() {
+    // Pre-fill from incoming share / protocol handler
+    const incoming = (window as any).__tvIncomingText as string | undefined;
+    const qsText = this.route.snapshot.queryParamMap.get('text') ?? this.route.snapshot.queryParamMap.get('data');
+    const seed = incoming ?? qsText;
+    if (seed) {
+      delete (window as any).__tvIncomingText;
+      this.text = seed;
+      this.mode.set(/^https?:\/\//.test(seed) ? 'url' : 'text');
+      setTimeout(() => this.render(), 0);
+    }
+  }
 
   build(): string {
     switch (this.mode()) {
@@ -138,6 +162,12 @@ export class QrGenerator {
         errorCorrectionLevel: 'M',
       });
     } catch {}
+  }
+
+  async shareImage() {
+    const c = document.querySelector('canvas') as HTMLCanvasElement; if (!c) return;
+    const blob: Blob = await new Promise(r => c.toBlob(b => r(b!), 'image/png'));
+    await this.share.shareFile(new File([blob], 'qr.png', { type: 'image/png' }));
   }
 
   async download(fmt: 'png' | 'svg') {

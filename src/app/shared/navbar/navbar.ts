@@ -30,11 +30,19 @@ const GROUPS: Group[] = [
   ]},
   { label: 'More', items: [
     { label: 'Text tools', route: '/text' }, { label: 'Markdown', route: '/text/markdown' },
+    { label: 'Translator', route: '/text/translate' },
     { label: 'Calculators', route: '/calc' }, { label: 'QR generator', route: '/qr/generator' },
     { label: 'QR scanner', route: '/qr/scanner' }, { label: 'Password tools', route: '/security/password' },
     { label: 'AES encrypt', route: '/security/aes' }, { label: 'Fake data', route: '/security/faker' },
+    { label: 'Gzip / Deflate', route: '/dev/compress-text' },
     { label: 'Productivity', route: '/productivity' }, { label: 'Meta generator', route: '/seo/meta' },
     { label: 'robots/sitemap', route: '/seo/robots' },
+  ]},
+  { label: 'Hardware', items: [
+    { label: 'NFC reader/writer', route: '/hw/nfc' },
+    { label: 'GPS speed', route: '/hw/speed' },
+    { label: 'Shake dice', route: '/hw/shake' },
+    { label: 'P2P file transfer', route: '/hw/p2p' },
   ]},
   { label: 'Live', items: [
     { label: 'Currency', route: '/currency' }, { label: 'Crypto', route: '/crypto' },
