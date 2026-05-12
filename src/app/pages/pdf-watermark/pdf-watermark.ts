@@ -1,9 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { PageHeader } from '../../shared/page-header/page-header';
+import { PdfRenderService } from '../../shared/pdf-render.service';
 
 @Component({
   selector: 'app-pdf-watermark',
@@ -15,7 +16,7 @@ import { PageHeader } from '../../shared/page-header/page-header';
       @if (!file()) {
         <app-dropzone title="Drop a PDF" subtitle="Single file" (files)="pick($event)" />
       } @else {
-        <div class="grid lg:grid-cols-2 gap-6">
+        <div class="grid lg:grid-cols-2 gap-6" data-no-drop>
           <div class="card p-6 space-y-4">
             <div class="flex items-center gap-3">
               <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 grid place-items-center text-white font-bold">PDF</div>
@@ -54,14 +55,20 @@ import { PageHeader } from '../../shared/page-header/page-header';
           </div>
 
           <div class="card p-6">
-            <div class="text-sm font-semibold mb-3">Preview</div>
-            <div class="aspect-[3/4] rounded-xl bg-white border border-slate-200 dark:border-slate-700 relative overflow-hidden grid place-items-center">
-              <div class="text-slate-300 text-xs absolute top-2 left-2">Sample document</div>
-              <div class="absolute inset-0 grid place-items-center">
-                <div [style.color]="color" [style.opacity]="opacity" [style.fontSize.px]="size/2" [style.transform]="diagonal ? 'rotate(-45deg)' : 'none'" class="font-bold whitespace-nowrap">
-                  {{ text || 'Watermark' }}
+            <div class="text-sm font-semibold mb-3">Live preview (page 1)</div>
+            <div class="relative rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden grid place-items-center" style="min-height: 420px;">
+              @if (previewUrl()) {
+                <div class="relative inline-block">
+                  <img [src]="previewUrl()!" class="block max-h-[500px] w-auto" alt="Preview" />
+                  <div class="absolute inset-0 grid place-items-center pointer-events-none">
+                    <div [style.color]="color" [style.opacity]="opacity" [style.fontSize.px]="size/2" [style.transform]="diagonal ? 'rotate(-45deg)' : 'none'" class="font-bold whitespace-nowrap select-none">
+                      {{ text || 'Watermark' }}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              } @else {
+                <div class="text-slate-500 text-sm">Loading preview…</div>
+              }
             </div>
           </div>
         </div>
@@ -70,6 +77,8 @@ import { PageHeader } from '../../shared/page-header/page-header';
   `,
 })
 export class PdfWatermark {
+  private renderer = inject(PdfRenderService);
+
   protected file = signal<File | null>(null);
   protected text = 'CONFIDENTIAL';
   protected size = 60;
@@ -78,15 +87,27 @@ export class PdfWatermark {
   protected diagonal = true;
   protected busy = signal(false);
   protected error = signal('');
+  protected previewUrl = signal<string | null>(null);
   private bytes: ArrayBuffer | null = null;
 
   async pick(list: File[]) {
     const f = list[0]; if (!f) return;
     this.file.set(f);
     this.bytes = await f.arrayBuffer();
+    this.renderPreview();
   }
 
-  reset() { this.file.set(null); this.bytes = null; }
+  private async renderPreview() {
+    if (!this.bytes) return;
+    try {
+      const r = await this.renderer.renderFirstPage(this.bytes, 1);
+      this.previewUrl.set(r.dataUrl);
+    } catch (e: any) {
+      this.error.set('Preview failed: ' + (e?.message ?? 'unknown error'));
+    }
+  }
+
+  reset() { this.file.set(null); this.bytes = null; this.previewUrl.set(null); }
 
   async run() {
     if (!this.bytes) return;

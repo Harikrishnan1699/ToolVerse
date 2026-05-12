@@ -9,7 +9,7 @@ import { PageHeader } from '../../shared/page-header/page-header';
   template: `
     <app-page-header title="Scan to PDF" subtitle="Capture pages with your camera and turn them into a multi-page PDF." icon="📷" color="from-rose-500 to-orange-500" />
     <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-      <div class="grid lg:grid-cols-2 gap-6">
+      <div class="grid lg:grid-cols-2 gap-6" data-no-drop>
         <div class="card p-6 space-y-4">
           <div class="rounded-2xl overflow-hidden bg-black aspect-[3/4] grid place-items-center">
             @if (streaming()) {

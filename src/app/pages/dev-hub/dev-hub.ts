@@ -12,6 +12,7 @@ const DEV_TOOLS = [
   { id: 'color', name: 'Color Converter', desc: 'HEX ↔ RGB ↔ HSL.', icon: '●', route: '/dev/color', color: 'from-fuchsia-500 to-pink-600' },
   { id: 'gradient', name: 'Gradient Generator', desc: 'Linear / radial CSS gradients.', icon: '◐', route: '/dev/gradient', color: 'from-fuchsia-500 to-purple-600' },
   { id: 'shadow', name: 'Box-Shadow', desc: 'Visual CSS box-shadow builder.', icon: '▣', route: '/dev/box-shadow', color: 'from-slate-500 to-slate-700' },
+  { id: 'html', name: 'HTML Formatter', desc: 'Beautify, minify and preview HTML.', icon: '</>', route: '/dev/html', color: 'from-orange-500 to-rose-500' },
 ];
 
 @Component({

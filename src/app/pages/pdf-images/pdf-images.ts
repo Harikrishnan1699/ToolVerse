@@ -17,7 +17,7 @@ interface Img { file: File; url: string; }
       @if (imgs().length === 0) {
         <app-dropzone title="Drop images" subtitle="JPG, PNG, WEBP — drag to reorder afterwards" [multiple]="true" accept="image/*" (files)="add($event)" />
       } @else {
-        <div class="card p-5">
+        <div class="card p-5" data-no-drop>
           <div class="flex items-center justify-between mb-4">
             <div class="text-sm text-slate-600 dark:text-slate-400">{{ imgs().length }} image(s)</div>
             <div class="flex gap-2">

@@ -2,52 +2,95 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../theme.service';
 
-interface Group { label: string; items: { label: string; route: string }[]; }
+interface Item { label: string; route: string; icon: string; color: string; desc?: string; }
+interface Group { label: string; items: Item[]; cols?: 1 | 2 | 3 | 4; align?: 'left' | 'right'; }
 
 const GROUPS: Group[] = [
-  { label: 'PDF', items: [
-    { label: 'All PDF tools', route: '/pdf' },
-    { label: 'Merge', route: '/pdf/merge' }, { label: 'Split', route: '/pdf/split' },
-    { label: 'Compress', route: '/pdf/compress' }, { label: 'Sign', route: '/pdf/sign' },
-    { label: 'Redact', route: '/pdf/redact' }, { label: 'Watermark', route: '/pdf/watermark' },
+  { label: 'PDF', cols: 2, items: [
+    { label: 'All PDF tools',  route: '/pdf',            icon: '📚', color: 'from-slate-500 to-slate-700',  desc: 'Browse 19 tools' },
+    { label: 'Merge',          route: '/pdf/merge',      icon: '🔗', color: 'from-orange-500 to-amber-500',  desc: 'Combine PDFs' },
+    { label: 'Split',          route: '/pdf/split',      icon: '✂',  color: 'from-rose-500 to-pink-600',     desc: 'Break into parts' },
+    { label: 'Compress',       route: '/pdf/compress',   icon: '🗜', color: 'from-emerald-500 to-teal-600',  desc: 'Reduce file size' },
+    { label: 'Sign',           route: '/pdf/sign',       icon: '✍',  color: 'from-indigo-500 to-violet-600', desc: 'Add signature' },
+    { label: 'Redact',         route: '/pdf/redact',     icon: '🛡', color: 'from-red-500 to-rose-600',      desc: 'Black out content' },
+    { label: 'Watermark',      route: '/pdf/watermark',  icon: '💧', color: 'from-cyan-500 to-blue-600',     desc: 'Brand each page' },
+    { label: 'Protect',        route: '/pdf/protect',    icon: '🔒', color: 'from-violet-500 to-purple-600', desc: 'Password lock' },
   ]},
-  { label: 'Image', items: [
-    { label: 'All image tools', route: '/image' },
-    { label: 'Compress', route: '/image/compress' }, { label: 'Resize', route: '/image/resize' },
-    { label: 'OCR (image to text)', route: '/image/ocr' }, { label: 'Background remover', route: '/image/background-remove' },
-    { label: 'Favicon generator', route: '/image/favicon' }, { label: 'Meme generator', route: '/image/meme' },
+  { label: 'Image', cols: 2, items: [
+    { label: 'All image tools',route: '/image',                 icon: '🖼',  color: 'from-purple-500 to-fuchsia-600', desc: 'Browse 9 tools' },
+    { label: 'Compress',       route: '/image/compress',        icon: '🗜', color: 'from-emerald-500 to-teal-600',  desc: 'Shrink size' },
+    { label: 'Resize',         route: '/image/resize',          icon: '⤡',  color: 'from-sky-500 to-cyan-600',      desc: 'Set dimensions' },
+    { label: 'OCR',            route: '/image/ocr',             icon: '🔤', color: 'from-amber-500 to-orange-600',  desc: 'Image to text' },
+    { label: 'BG remove',      route: '/image/background-remove', icon: '✨', color: 'from-pink-500 to-rose-600',    desc: 'AI in browser' },
+    { label: 'Favicon',        route: '/image/favicon',         icon: '⭐', color: 'from-yellow-500 to-amber-600',  desc: 'Generate icons' },
+    { label: 'Meme',           route: '/image/meme',            icon: '😂', color: 'from-orange-500 to-rose-600',   desc: 'Add captions' },
+    { label: 'Palette',        route: '/image/palette',         icon: '🎨', color: 'from-fuchsia-500 to-pink-600',  desc: 'Extract colors' },
+    { label: 'EXIF stripper',  route: '/exif-stripper',         icon: '🧽', color: 'from-violet-500 to-fuchsia-600',desc: 'Remove metadata' },
   ]},
-  { label: 'Media', items: [
-    { label: 'All media tools', route: '/media' },
-    { label: 'Video to GIF', route: '/media/video-to-gif' }, { label: 'Compress video', route: '/media/video-compress' },
-    { label: 'Audio converter', route: '/media/audio-convert' },
+  { label: 'Media', cols: 1, items: [
+    { label: 'Video to GIF',   route: '/media/video-to-gif',    icon: '🎞', color: 'from-pink-500 to-rose-600',    desc: 'In-browser FFmpeg' },
+    { label: 'Compress video', route: '/media/video-compress',  icon: '🎬', color: 'from-rose-500 to-orange-600',  desc: 'Smaller MP4s' },
+    { label: 'Audio convert',  route: '/media/audio-convert',   icon: '🎵', color: 'from-cyan-500 to-blue-600',    desc: 'MP3 / WAV / OGG' },
+    { label: 'Screen Recorder',route: '/screen-recorder',       icon: '🎥', color: 'from-rose-500 to-pink-600',    desc: 'Capture screen + mic' },
   ]},
-  { label: 'Dev', items: [
-    { label: 'All dev tools', route: '/dev' },
-    { label: 'JSON formatter', route: '/dev/json' }, { label: 'Hash generator', route: '/dev/hash' },
-    { label: 'JWT decoder', route: '/dev/jwt' }, { label: 'Regex tester', route: '/dev/regex' },
-    { label: 'Gradient generator', route: '/dev/gradient' },
+  { label: 'Dev', cols: 3, items: [
+    { label: 'All dev tools',  route: '/dev',                   icon: '⌨',  color: 'from-slate-500 to-slate-700',   desc: 'Browse hub' },
+    { label: 'JSON',           route: '/dev/json',              icon: '{}', color: 'from-emerald-500 to-teal-600',  desc: 'Format & validate' },
+    { label: 'Base64',         route: '/dev/base64',            icon: '🔤', color: 'from-cyan-500 to-blue-600',     desc: 'Encode / decode' },
+    { label: 'URL',            route: '/dev/url',               icon: '🔗', color: 'from-sky-500 to-indigo-600',    desc: 'Encode params' },
+    { label: 'Hash',           route: '/dev/hash',              icon: '#',  color: 'from-violet-500 to-purple-600', desc: 'MD5 / SHA' },
+    { label: 'JWT',            route: '/dev/jwt',               icon: '🎟', color: 'from-orange-500 to-amber-600',  desc: 'Decode tokens' },
+    { label: 'UUID',           route: '/dev/uuid',              icon: '🆔', color: 'from-emerald-500 to-green-600', desc: 'Generate IDs' },
+    { label: 'Regex',          route: '/dev/regex',             icon: '/.', color: 'from-rose-500 to-pink-600',     desc: 'Test patterns' },
+    { label: 'Color',          route: '/dev/color',             icon: '🎨', color: 'from-fuchsia-500 to-purple-600',desc: 'Picker & convert' },
+    { label: 'Gradient',       route: '/dev/gradient',          icon: '🌈', color: 'from-pink-500 to-orange-500',   desc: 'CSS gradients' },
+    { label: 'Box shadow',     route: '/dev/box-shadow',        icon: '◻',  color: 'from-slate-500 to-slate-700',   desc: 'Visual builder' },
+    { label: 'HTML',           route: '/dev/html',              icon: '</>', color: 'from-orange-500 to-rose-500',  desc: 'Format / minify' },
+    { label: 'API Tester',     route: '/api-tester',            icon: '⚡', color: 'from-amber-500 to-orange-600',  desc: 'Mini Postman' },
+    { label: 'Data Convert',   route: '/dev/data-convert',      icon: '⇄',  color: 'from-cyan-500 to-blue-600',     desc: 'JSON ↔ CSV ↔ YAML' },
+    { label: 'SQL Formatter',  route: '/dev/sql',               icon: '📊', color: 'from-blue-500 to-indigo-600',   desc: 'Pretty-print SQL' },
+    { label: 'Cron Builder',   route: '/dev/cron',              icon: '⏰', color: 'from-orange-500 to-amber-600',  desc: 'Visual cron' },
+    { label: 'Gzip / Deflate', route: '/dev/compress-text',     icon: '🗜', color: 'from-emerald-500 to-teal-600',  desc: 'Compress text' },
   ]},
-  { label: 'More', items: [
-    { label: 'Text tools', route: '/text' }, { label: 'Markdown', route: '/text/markdown' },
-    { label: 'Translator', route: '/text/translate' },
-    { label: 'Calculators', route: '/calc' }, { label: 'QR generator', route: '/qr/generator' },
-    { label: 'QR scanner', route: '/qr/scanner' }, { label: 'Password tools', route: '/security/password' },
-    { label: 'AES encrypt', route: '/security/aes' }, { label: 'Fake data', route: '/security/faker' },
-    { label: 'Gzip / Deflate', route: '/dev/compress-text' },
-    { label: 'Productivity', route: '/productivity' }, { label: 'Meta generator', route: '/seo/meta' },
-    { label: 'robots/sitemap', route: '/seo/robots' },
+  { label: 'More', cols: 3, items: [
+    { label: 'Text tools',     route: '/text',                  icon: '¶',  color: 'from-indigo-500 to-violet-600', desc: 'Counter, case, diff' },
+    { label: 'Markdown',       route: '/text/markdown',         icon: 'M↓', color: 'from-slate-500 to-slate-700',   desc: 'Live editor' },
+    { label: 'Translator',     route: '/text/translate',        icon: '🌐', color: 'from-sky-500 to-cyan-600',      desc: 'Free translate' },
+    { label: 'Calculators',    route: '/calc',                  icon: '∑',  color: 'from-emerald-500 to-green-600', desc: 'Unit, age, BMI' },
+    { label: 'Tax & SIP',      route: '/calc/tax',              icon: '💰', color: 'from-emerald-500 to-green-600', desc: 'IN/US income tax' },
+    { label: 'Health Calc',    route: '/calc/health',           icon: '❤',  color: 'from-pink-500 to-rose-600',     desc: 'Sleep, BMR, water' },
+    { label: 'QR generator',   route: '/qr/generator',          icon: '▦',  color: 'from-slate-700 to-slate-900',   desc: 'URL/WiFi/UPI' },
+    { label: 'QR scanner',     route: '/qr/scanner',            icon: '📷', color: 'from-slate-700 to-slate-900',   desc: 'Camera scan' },
+    { label: 'Typing test',    route: '/typing-test',           icon: '⌨',  color: 'from-indigo-500 to-purple-600', desc: 'Live WPM' },
+    { label: 'AI Writer',      route: '/ai-writer',             icon: '✍',  color: 'from-indigo-500 to-fuchsia-600',desc: 'Grammar + rewrite' },
+    { label: 'Productivity',   route: '/productivity',          icon: '⏱', color: 'from-rose-500 to-orange-500',   desc: 'Pomodoro & more' },
+    { label: 'Habit tracker',  route: '/habit-tracker',         icon: '🎯', color: 'from-emerald-500 to-teal-600',  desc: 'Build streaks' },
+    { label: 'Invoice',        route: '/invoice-generator',     icon: '🧾', color: 'from-emerald-500 to-green-600', desc: 'PDF invoices' },
+    { label: 'Timezone',       route: '/timezone-converter',    icon: '🌐', color: 'from-sky-500 to-indigo-600',    desc: 'Meeting planner' },
+    { label: 'Email signature',route: '/email-signature',       icon: '✉',  color: 'from-sky-500 to-indigo-600',    desc: 'HTML signature' },
+    { label: 'Markdown table', route: '/markdown-table',        icon: '▦',  color: 'from-amber-500 to-orange-600',  desc: 'Visual builder' },
+    { label: 'Password tools', route: '/security/password',     icon: '🔑', color: 'from-violet-500 to-purple-600', desc: 'Generate & strength' },
+    { label: 'AES encrypt',    route: '/security/aes',          icon: '🔐', color: 'from-rose-500 to-purple-600',   desc: 'Encrypt text' },
+    { label: 'TOTP / 2FA',     route: '/security/totp',         icon: '🔐', color: 'from-emerald-500 to-cyan-600',  desc: 'One-time codes' },
+    { label: 'URL cleaner',    route: '/security/url-clean',    icon: '🧹', color: 'from-emerald-500 to-teal-600',  desc: 'Strip trackers' },
+    { label: 'Breach check',   route: '/security/breach',       icon: '🛡', color: 'from-rose-500 to-pink-600',     desc: 'HIBP lookup' },
+    { label: 'Fake data',      route: '/security/faker',        icon: '🎲', color: 'from-amber-500 to-orange-600',  desc: 'Mock data' },
+    { label: 'Meta generator', route: '/seo/meta',              icon: '🏷', color: 'from-blue-500 to-cyan-600',     desc: 'OG / Twitter' },
+    { label: 'Robots / sitemap',route: '/seo/robots',           icon: '🤖', color: 'from-slate-500 to-slate-700',   desc: 'SEO files' },
   ]},
-  { label: 'Hardware', items: [
-    { label: 'NFC reader/writer', route: '/hw/nfc' },
-    { label: 'GPS speed', route: '/hw/speed' },
-    { label: 'Shake dice', route: '/hw/shake' },
-    { label: 'P2P file transfer', route: '/hw/p2p' },
+  { label: 'Hardware', cols: 1, items: [
+    { label: 'NFC reader / writer', route: '/hw/nfc',           icon: '📡', color: 'from-indigo-500 to-blue-600',   desc: 'Read & write tags' },
+    { label: 'GPS speed',           route: '/hw/speed',         icon: '🛰', color: 'from-cyan-500 to-sky-600',      desc: 'Live speedometer' },
+    { label: 'Shake dice',          route: '/hw/shake',         icon: '🎲', color: 'from-amber-500 to-orange-600',  desc: 'Motion roll' },
+    { label: 'P2P transfer',        route: '/hw/p2p',           icon: '📲', color: 'from-emerald-500 to-teal-600',  desc: 'Peer-to-peer files' },
   ]},
-  { label: 'Live', items: [
-    { label: 'Currency', route: '/currency' }, { label: 'Crypto', route: '/crypto' },
-    { label: 'Weather', route: '/weather' }, { label: 'Country info', route: '/country' },
-    { label: 'IP lookup', route: '/ip' }, { label: 'Public holidays', route: '/holidays' },
+  { label: 'Live', cols: 2, align: 'right', items: [
+    { label: 'Currency',       route: '/currency', icon: '$', color: 'from-green-500 to-emerald-600',  desc: 'Live FX rates' },
+    { label: 'Crypto',         route: '/crypto',   icon: '₿', color: 'from-yellow-500 to-orange-500',  desc: 'Top 100 coins' },
+    { label: 'Weather',        route: '/weather',  icon: '☀', color: 'from-cyan-500 to-sky-600',       desc: '7-day forecast' },
+    { label: 'Country info',   route: '/country',  icon: '🌍', color: 'from-emerald-500 to-cyan-600',  desc: '250 countries' },
+    { label: 'IP lookup',      route: '/ip',       icon: '🌐', color: 'from-sky-500 to-indigo-600',    desc: 'Geolocate' },
+    { label: 'Holidays',       route: '/holidays', icon: '🎉', color: 'from-pink-500 to-rose-600',     desc: '18+ countries' },
   ]},
 ];
 
@@ -65,16 +108,33 @@ const GROUPS: Group[] = [
         <div class="hidden md:flex items-center gap-1">
           @for (g of groups; track g.label) {
             <div class="relative" (mouseenter)="hover.set(g.label)" (mouseleave)="hover.set('')">
-              <button class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 rounded-lg transition flex items-center gap-1">
+              <button class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-300 rounded-lg transition flex items-center gap-1"
+                      [class.!text-brand-600]="hover() === g.label"
+                      [class.dark:!text-brand-300]="hover() === g.label">
                 {{ g.label }}
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="w-3 h-3 transition-transform" [class.rotate-180]="hover() === g.label" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
               </button>
               @if (hover() === g.label) {
-                <div class="absolute top-full left-0 pt-1 z-50">
-                  <div class="card p-2 min-w-[220px] shadow-glow">
-                    @for (item of g.items; track item.route) {
-                      <a [routerLink]="item.route" routerLinkActive="bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-300" class="block px-3 py-2 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">{{ item.label }}</a>
-                    }
+                <div class="absolute top-full pt-2 z-50"
+                     [class.left-0]="g.align !== 'right'"
+                     [class.right-0]="g.align === 'right'"
+                     style="animation: nav-pop 0.18s ease-out both;">
+                  <div class="card p-2 shadow-glow border border-slate-200/80 dark:border-slate-700/80"
+                       [style.width.px]="g.cols === 3 ? 480 : g.cols === 2 ? 340 : 220">
+                    <div class="grid gap-0.5"
+                         [class.grid-cols-1]="!g.cols || g.cols === 1"
+                         [class.grid-cols-2]="g.cols === 2"
+                         [class.grid-cols-3]="g.cols === 3">
+                      @for (item of g.items; track item.route; let i = $index) {
+                        <a [routerLink]="item.route"
+                           routerLinkActive="!bg-brand-50 dark:!bg-brand-950/60"
+                           class="nav-item group/item flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800/70 transition"
+                           [style.animationDelay.ms]="i * 15">
+                          <div class="w-6 h-6 rounded-md bg-gradient-to-br {{ item.color }} grid place-items-center text-white text-[11px] shadow-sm shrink-0 group-hover/item:scale-110 group-hover/item:rotate-3 transition">{{ item.icon }}</div>
+                          <span class="text-[12px] font-medium text-slate-700 dark:text-slate-200 truncate leading-tight">{{ item.label }}</span>
+                        </a>
+                      }
+                    </div>
                   </div>
                 </div>
               }
@@ -97,19 +157,38 @@ const GROUPS: Group[] = [
       </nav>
 
       @if (open()) {
-        <div class="md:hidden border-t border-slate-200 dark:border-slate-800 px-4 py-3 space-y-2 max-h-[70vh] overflow-y-auto">
+        <div class="md:hidden border-t border-slate-200 dark:border-slate-800 px-4 py-3 space-y-3 max-h-[70vh] overflow-y-auto">
           @for (g of groups; track g.label) {
-            <div>
-              <div class="text-xs font-semibold text-slate-500 uppercase mt-2 mb-1">{{ g.label }}</div>
-              @for (item of g.items; track item.route) {
-                <a [routerLink]="item.route" (click)="open.set(false)" class="block px-3 py-1.5 text-sm rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">{{ item.label }}</a>
-              }
-            </div>
+            <details class="group/d">
+              <summary class="flex items-center justify-between cursor-pointer text-sm font-bold text-slate-700 dark:text-slate-200 py-2 px-1">
+                <span class="uppercase tracking-widest text-xs">{{ g.label }}</span>
+                <svg class="w-4 h-4 transition group-open/d:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="grid grid-cols-2 gap-1.5 pt-2 pb-3">
+                @for (item of g.items; track item.route) {
+                  <a [routerLink]="item.route" (click)="open.set(false)" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br {{ item.color }} grid place-items-center text-white text-sm shadow-sm shrink-0">{{ item.icon }}</div>
+                    <span class="text-xs font-semibold text-slate-900 dark:text-white truncate">{{ item.label }}</span>
+                  </a>
+                }
+              </div>
+            </details>
           }
         </div>
       }
     </header>
   `,
+  styles: [`
+    @keyframes nav-pop {
+      from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes nav-item-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .nav-item { animation: nav-item-in 0.28s ease-out both; }
+  `],
 })
 export class Navbar {
   protected theme = inject(ThemeService);

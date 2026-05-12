@@ -24,6 +24,7 @@ export const routes: Routes = [
   { path: 'pdf/unlock', loadComponent: () => import('./pages/pdf-unlock/pdf-unlock').then(m => m.PdfUnlock) },
   { path: 'pdf/sign', loadComponent: () => import('./pages/pdf-sign/pdf-sign').then(m => m.PdfSign) },
   { path: 'pdf/redact', loadComponent: () => import('./pages/pdf-redact/pdf-redact').then(m => m.PdfRedact) },
+  { path: 'pdf/protect', loadComponent: () => import('./pages/pdf-protect/pdf-protect').then(m => m.PdfProtect) },
 
   // Image
   { path: 'image', loadComponent: () => import('./pages/image-hub/image-hub').then(m => m.ImageHub), title: 'Image Tools' },
@@ -57,6 +58,7 @@ export const routes: Routes = [
   { path: 'dev/color', loadComponent: () => import('./pages/dev-color/dev-color').then(m => m.DevColor) },
   { path: 'dev/gradient', loadComponent: () => import('./pages/dev-gradient/dev-gradient').then(m => m.DevGradient) },
   { path: 'dev/box-shadow', loadComponent: () => import('./pages/dev-shadow/dev-shadow').then(m => m.DevShadow) },
+  { path: 'dev/html', loadComponent: () => import('./pages/dev-html/dev-html').then(m => m.DevHtml) },
 
   // Text
   { path: 'text', loadComponent: () => import('./pages/text-tools/text-tools').then(m => m.TextTools), title: 'Text Tools' },
@@ -77,6 +79,8 @@ export const routes: Routes = [
 
   // Productivity
   { path: 'productivity', loadComponent: () => import('./pages/productivity-hub/productivity-hub').then(m => m.ProductivityHub), title: 'Productivity' },
+  { path: 'typing-test', loadComponent: () => import('./pages/typing-test/typing-test').then(m => m.TypingTest), title: 'Typing Test — Toolverse' },
+  { path: 'ai-writer', loadComponent: () => import('./pages/ai-writer/ai-writer').then(m => m.AiWriter), title: 'AI Writing Assistant — Toolverse' },
 
   // SEO
   { path: 'seo/meta', loadComponent: () => import('./pages/seo-meta/seo-meta').then(m => m.SeoMeta), title: 'Meta Generator' },
@@ -104,6 +108,25 @@ export const routes: Routes = [
   // More dev / text
   { path: 'dev/compress-text', loadComponent: () => import('./pages/dev-compress-text/dev-compress-text').then(m => m.DevCompressText), title: 'Gzip / Deflate — Toolverse' },
   { path: 'text/translate', loadComponent: () => import('./pages/text-translate/text-translate').then(m => m.TextTranslate), title: 'Translator — Toolverse' },
+
+  // Daily-use tools
+  { path: 'screen-recorder', loadComponent: () => import('./pages/screen-recorder/screen-recorder').then(m => m.ScreenRecorder), title: 'Screen Recorder — Toolverse' },
+  { path: 'api-tester', loadComponent: () => import('./pages/api-tester/api-tester').then(m => m.ApiTester), title: 'API Tester — Toolverse' },
+  { path: 'invoice-generator', loadComponent: () => import('./pages/invoice-generator/invoice-generator').then(m => m.InvoiceGenerator), title: 'Invoice Generator — Toolverse' },
+  { path: 'timezone-converter', loadComponent: () => import('./pages/timezone-converter/timezone-converter').then(m => m.TimezoneConverter), title: 'Time Zone Converter — Toolverse' },
+  { path: 'exif-stripper', loadComponent: () => import('./pages/exif-stripper/exif-stripper').then(m => m.ExifStripper), title: 'EXIF Stripper — Toolverse' },
+  { path: 'dev/data-convert', loadComponent: () => import('./pages/dev-data-convert/dev-data-convert').then(m => m.DevDataConvert), title: 'Data Converter — Toolverse' },
+  { path: 'dev/sql', loadComponent: () => import('./pages/dev-sql/dev-sql').then(m => m.DevSql), title: 'SQL Formatter — Toolverse' },
+  { path: 'dev/cron', loadComponent: () => import('./pages/dev-cron/dev-cron').then(m => m.DevCron), title: 'Cron Builder — Toolverse' },
+  { path: 'security/totp', loadComponent: () => import('./pages/sec-totp/sec-totp').then(m => m.SecTotp), title: 'TOTP Generator — Toolverse' },
+  { path: 'security/url-clean', loadComponent: () => import('./pages/sec-url-clean/sec-url-clean').then(m => m.SecUrlClean), title: 'URL Cleaner — Toolverse' },
+  { path: 'security/breach', loadComponent: () => import('./pages/sec-breach/sec-breach').then(m => m.SecBreach), title: 'Password Breach Check — Toolverse' },
+  { path: 'calc/tax', loadComponent: () => import('./pages/calc-tax/calc-tax').then(m => m.CalcTax), title: 'Tax & SIP Calculators — Toolverse' },
+  { path: 'calc/health', loadComponent: () => import('./pages/calc-health/calc-health').then(m => m.CalcHealth), title: 'Health Calculators — Toolverse' },
+  { path: 'email-signature', loadComponent: () => import('./pages/email-signature/email-signature').then(m => m.EmailSignature), title: 'Email Signature — Toolverse' },
+  { path: 'markdown-table', loadComponent: () => import('./pages/markdown-table/markdown-table').then(m => m.MarkdownTable), title: 'Markdown Table Builder — Toolverse' },
+  { path: 'habit-tracker', loadComponent: () => import('./pages/habit-tracker/habit-tracker').then(m => m.HabitTracker), title: 'Habit Tracker — Toolverse' },
+  { path: 'image/palette', loadComponent: () => import('./pages/image-palette/image-palette').then(m => m.ImagePalette), title: 'Color Palette Extractor — Toolverse' },
 
   { path: '**', redirectTo: '' },
 ];

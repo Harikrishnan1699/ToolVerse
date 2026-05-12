@@ -8,7 +8,7 @@ import { PageHeader } from '../../shared/page-header/page-header';
   template: `
     <app-page-header title="HTML to PDF" subtitle="Paste HTML or a URL and save it as a PDF using your browser's print engine." icon="</>" color="from-amber-500 to-yellow-500" />
     <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-      <div class="card p-6 space-y-4">
+      <div class="card p-6 space-y-4" data-no-drop>
         <div class="flex items-center gap-2">
           <button class="btn-secondary text-xs" [class.!bg-brand-50]="mode() === 'html'" (click)="mode.set('html')">Paste HTML</button>
           <button class="btn-secondary text-xs" [class.!bg-brand-50]="mode() === 'url'" (click)="mode.set('url')">From URL</button>

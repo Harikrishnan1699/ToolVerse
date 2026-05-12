@@ -2,12 +2,13 @@ import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SectionHeader } from '../../shared/section-header/section-header';
+import { Calculator } from './calculator';
 
-type CalcTab = 'unit' | 'age' | 'date' | 'bmi' | 'loan' | 'tip' | 'pct' | 'gst' | 'roman' | 'numwords';
+type CalcTab = 'calc' | 'unit' | 'age' | 'date' | 'bmi' | 'loan' | 'tip' | 'pct' | 'gst' | 'roman' | 'numwords';
 
 @Component({
   selector: 'app-calc-tools',
-  imports: [FormsModule, CommonModule, SectionHeader],
+  imports: [FormsModule, CommonModule, SectionHeader, Calculator],
   template: `
     <app-section-header title="Calculators & Converters" subtitle="Unit, age, date, BMI, loan, tip, percentage, GST, Roman, number-to-words." icon="∑" color="from-emerald-500 to-green-600" />
     <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 space-y-5">
@@ -18,6 +19,9 @@ type CalcTab = 'unit' | 'age' | 'date' | 'bmi' | 'loan' | 'tip' | 'pct' | 'gst' 
       </div>
 
       @switch (tab()) {
+        @case ('calc') {
+          <app-calculator />
+        }
         @case ('unit') {
           <div class="card p-6 space-y-4">
             <div>
@@ -179,8 +183,9 @@ type CalcTab = 'unit' | 'age' | 'date' | 'bmi' | 'loan' | 'tip' | 'pct' | 'gst' 
   `,
 })
 export class CalcTools {
-  protected tab = signal<CalcTab>('unit');
+  protected tab = signal<CalcTab>('calc');
   protected tabs: { id: CalcTab; label: string }[] = [
+    { id: 'calc', label: '🧮 Calculator' },
     { id: 'unit', label: 'Unit Converter' }, { id: 'age', label: 'Age' }, { id: 'date', label: 'Date Diff' },
     { id: 'bmi', label: 'BMI' }, { id: 'loan', label: 'Loan / EMI' }, { id: 'tip', label: 'Tip / Split' },
     { id: 'pct', label: 'Percentage' }, { id: 'gst', label: 'GST' }, { id: 'roman', label: 'Roman' },

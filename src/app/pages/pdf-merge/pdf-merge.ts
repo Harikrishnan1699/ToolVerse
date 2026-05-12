@@ -1,10 +1,11 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { PageHeader } from '../../shared/page-header/page-header';
+import { PdfRenderService } from '../../shared/pdf-render.service';
 
-interface PdfFile { file: File; size: string; }
+interface PdfFile { file: File; size: string; pages: number; thumb: string | null; }
 
 @Component({
   selector: 'app-pdf-merge',
@@ -16,7 +17,7 @@ interface PdfFile { file: File; size: string; }
       @if (files().length === 0) {
         <app-dropzone title="Drop PDF files here" subtitle="Pick two or more PDFs to merge — drag to reorder afterwards" [multiple]="true" (files)="addFiles($event)" />
       } @else {
-        <div class="card p-5">
+        <div class="card p-5" data-no-drop>
           <div class="flex items-center justify-between mb-4">
             <div class="text-sm text-slate-600 dark:text-slate-400">{{ files().length }} file(s) — drag to reorder</div>
             <label class="btn-secondary cursor-pointer">
@@ -33,10 +34,16 @@ interface PdfFile { file: File; size: string; }
                 (dragstart)="dragIndex.set(i)"
                 (dragover)="$event.preventDefault()"
                 (drop)="reorder(i)">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 grid place-items-center text-white text-xs font-bold">PDF</div>
+                <div class="w-16 h-20 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-white grid place-items-center shrink-0">
+                  @if (f.thumb) {
+                    <img [src]="f.thumb" class="w-full h-full object-contain" alt="preview" />
+                  } @else {
+                    <div class="text-rose-500 text-xs font-bold">PDF</div>
+                  }
+                </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-medium truncate">{{ f.file.name }}</div>
-                  <div class="text-xs text-slate-500">{{ f.size }}</div>
+                  <div class="text-xs text-slate-500">{{ f.size }} · {{ f.pages || '?' }} page{{ f.pages === 1 ? '' : 's' }}</div>
                 </div>
                 <button (click)="move(i,-1)" class="btn-ghost px-2 py-1 text-xs" [disabled]="i===0">↑</button>
                 <button (click)="move(i,1)" class="btn-ghost px-2 py-1 text-xs" [disabled]="i===files().length-1">↓</button>
@@ -44,6 +51,12 @@ interface PdfFile { file: File; size: string; }
               </li>
             }
           </ul>
+
+          @if (totalPages() > 0) {
+            <div class="mt-4 p-3 rounded-xl bg-brand-50 dark:bg-brand-950/30 text-sm text-brand-700 dark:text-brand-300">
+              Result preview: {{ files().length }} file(s) merged → <strong>{{ totalPages() }}</strong> total pages
+            </div>
+          }
 
           <div class="mt-6 flex items-center justify-end gap-3">
             <button class="btn-secondary" (click)="clear()">Clear</button>
@@ -59,6 +72,8 @@ interface PdfFile { file: File; size: string; }
   `,
 })
 export class PdfMerge implements OnInit {
+  private renderer = inject(PdfRenderService);
+
   ngOnInit() {
     const incoming = (window as any).__tvIncomingFiles as File[] | undefined;
     if (incoming?.length) {
@@ -72,9 +87,27 @@ export class PdfMerge implements OnInit {
   protected error = signal('');
   protected dragIndex = signal<number | null>(null);
 
+  totalPages(): number {
+    return this.files().reduce((sum, f) => sum + (f.pages || 0), 0);
+  }
+
   addFiles(list: File[]) {
     const pdfs = list.filter(f => f.type === 'application/pdf');
-    this.files.update(arr => [...arr, ...pdfs.map(f => ({ file: f, size: this.fmt(f.size) }))]);
+    const newEntries: PdfFile[] = pdfs.map(f => ({ file: f, size: this.fmt(f.size), pages: 0, thumb: null }));
+    this.files.update(arr => [...arr, ...newEntries]);
+    newEntries.forEach(entry => this.loadMeta(entry));
+  }
+
+  private async loadMeta(entry: PdfFile) {
+    try {
+      const bytes = await entry.file.arrayBuffer();
+      const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const pages = doc.getPageCount();
+      const r = await this.renderer.renderFirstPage(bytes, 0.35);
+      this.files.update(arr => arr.map(x => x.file === entry.file ? { ...x, pages, thumb: r.dataUrl } : x));
+    } catch {
+      this.files.update(arr => arr.map(x => x.file === entry.file ? { ...x, pages: 0 } : x));
+    }
   }
 
   onAdd(e: Event) {

@@ -1,20 +1,23 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { PageHeader } from '../../shared/page-header/page-header';
+import { PdfRenderService } from '../../shared/pdf-render.service';
+
+type SigPos = 'tl' | 'tr' | 'bl' | 'br' | 'bc';
 
 @Component({
   selector: 'app-pdf-sign',
   imports: [Dropzone, FormsModule, PageHeader],
   template: `
     <app-page-header title="Sign PDF" subtitle="Draw your signature and stamp it onto a PDF page." icon="✍" color="from-pink-500 to-rose-600" />
-    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
       @if (!file()) {
         <app-dropzone title="Drop a PDF" (files)="pick($event)" />
       } @else {
-        <div class="grid lg:grid-cols-2 gap-6">
+        <div class="grid lg:grid-cols-2 gap-6" data-no-drop>
           <div class="card p-6 space-y-4">
             <div class="flex items-center gap-3">
               <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 grid place-items-center text-white">✍</div>
@@ -33,13 +36,13 @@ import { PageHeader } from '../../shared/page-header/page-header';
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="text-sm font-medium">Page</label>
-                <select class="input mt-1" [(ngModel)]="page">
+                <select class="input mt-1" [ngModel]="page()" (ngModelChange)="page.set(+$event); renderPreview()">
                   @for (n of pageList(); track n) { <option [ngValue]="n">Page {{ n }}</option> }
                 </select>
               </div>
               <div>
                 <label class="text-sm font-medium">Position</label>
-                <select class="input mt-1" [(ngModel)]="pos">
+                <select class="input mt-1" [ngModel]="pos()" (ngModelChange)="pos.set($event)">
                   <option value="bl">Bottom-left</option>
                   <option value="br">Bottom-right</option>
                   <option value="tl">Top-left</option>
@@ -56,12 +59,36 @@ import { PageHeader } from '../../shared/page-header/page-header';
           </div>
 
           <div class="card p-6">
-            <div class="text-sm font-semibold mb-3">Tips</div>
-            <ul class="text-sm text-slate-600 dark:text-slate-400 space-y-2 list-disc pl-5">
-              <li>Use a touchscreen or trackpad for the cleanest signature.</li>
-              <li>Signature is added as a transparent PNG overlay.</li>
-              <li>Signature is rendered ~150px wide near the chosen corner.</li>
-            </ul>
+            <div class="text-sm font-semibold mb-3">Live preview (page {{ page() }})</div>
+            <div class="relative rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden grid place-items-center" style="min-height: 420px;">
+              @if (previewUrl()) {
+                <div class="relative inline-block">
+                  <img [src]="previewUrl()!" class="block max-h-[600px] w-auto" alt="Preview" />
+                  @if (sigPreview()) {
+                    <img [src]="sigPreview()!" class="absolute"
+                         [style.top]="overlayStyle().top"
+                         [style.bottom]="overlayStyle().bottom"
+                         [style.left]="overlayStyle().left"
+                         [style.right]="overlayStyle().right"
+                         [style.transform]="overlayStyle().transform"
+                         [style.width.%]="25" alt="Signature" />
+                  } @else {
+                    <div class="absolute border-2 border-dashed border-rose-500/80 rounded grid place-items-center text-xs text-rose-600 bg-white/80"
+                         [style.top]="overlayStyle().top"
+                         [style.bottom]="overlayStyle().bottom"
+                         [style.left]="overlayStyle().left"
+                         [style.right]="overlayStyle().right"
+                         [style.transform]="overlayStyle().transform"
+                         [style.width.%]="25"
+                         [style.height.px]="48">
+                      Signature here
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-slate-500 text-sm">Loading preview…</div>
+              }
+            </div>
           </div>
         </div>
       }
@@ -70,12 +97,26 @@ import { PageHeader } from '../../shared/page-header/page-header';
 })
 export class PdfSign implements AfterViewInit {
   @ViewChild('pad') padRef?: ElementRef<HTMLCanvasElement>;
+  private renderer = inject(PdfRenderService);
+
   protected file = signal<File | null>(null);
   protected pages = signal(0);
-  protected page = 1;
-  protected pos = 'br';
+  protected page = signal(1);
+  protected pos = signal<SigPos>('br');
   protected busy = signal(false);
   protected error = signal('');
+  protected previewUrl = signal<string | null>(null);
+  protected sigPreview = signal<string | null>(null);
+  protected overlayStyle = computed(() => {
+    const m = '4%';
+    switch (this.pos()) {
+      case 'bl': return { top: 'auto', left: m, right: 'auto', bottom: m, transform: 'none' };
+      case 'br': return { top: 'auto', left: 'auto', right: m, bottom: m, transform: 'none' };
+      case 'tl': return { top: m, left: m, right: 'auto', bottom: 'auto', transform: 'none' };
+      case 'tr': return { top: m, left: 'auto', right: m, bottom: 'auto', transform: 'none' };
+      case 'bc': return { top: 'auto', left: '50%', right: 'auto', bottom: m, transform: 'translateX(-50%)' };
+    }
+  });
   private bytes: ArrayBuffer | null = null;
   private drawing = false;
   private pad?: HTMLCanvasElement;
@@ -88,11 +129,23 @@ export class PdfSign implements AfterViewInit {
     this.bytes = await f.arrayBuffer();
     const doc = await PDFDocument.load(this.bytes, { ignoreEncryption: true });
     this.pages.set(doc.getPageCount());
-    this.page = 1;
+    this.page.set(1);
+    this.renderPreview();
     setTimeout(() => this.setupPad(), 0);
   }
 
-  reset() { this.file.set(null); this.bytes = null; }
+  async renderPreview() {
+    if (!this.bytes) return;
+    try {
+      const doc = await this.renderer.loadDoc(this.bytes);
+      const r = await this.renderer.renderPageToDataUrl(doc, this.page(), 1);
+      this.previewUrl.set(r.dataUrl);
+    } catch (e: any) {
+      this.error.set('Preview failed: ' + (e?.message ?? 'unknown error'));
+    }
+  }
+
+  reset() { this.file.set(null); this.bytes = null; this.previewUrl.set(null); this.sigPreview.set(null); }
 
   ngAfterViewInit() { /* setup happens after pick() */ }
 
@@ -104,6 +157,11 @@ export class PdfSign implements AfterViewInit {
     const ctx = c.getContext('2d')!;
     ctx.scale(dpr, dpr);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.2; ctx.strokeStyle = '#0f172a';
+
+    const updatePreview = () => {
+      const data = c.toDataURL('image/png');
+      this.sigPreview.set(this.isCanvasBlank(c) ? null : data);
+    };
 
     const start = (e: PointerEvent) => {
       this.drawing = true;
@@ -118,7 +176,7 @@ export class PdfSign implements AfterViewInit {
       ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
       ctx.stroke();
     };
-    const end = () => { this.drawing = false; };
+    const end = () => { if (this.drawing) { this.drawing = false; updatePreview(); } };
 
     c.addEventListener('pointerdown', start);
     c.addEventListener('pointermove', move);
@@ -127,10 +185,18 @@ export class PdfSign implements AfterViewInit {
     c.addEventListener('pointerleave', end);
   }
 
+  private isCanvasBlank(c: HTMLCanvasElement): boolean {
+    const ctx = c.getContext('2d')!;
+    const data = ctx.getImageData(0, 0, c.width, c.height).data;
+    for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return false;
+    return true;
+  }
+
   clearSig() {
     if (!this.pad) return;
     const ctx = this.pad.getContext('2d')!;
     ctx.clearRect(0, 0, this.pad.width, this.pad.height);
+    this.sigPreview.set(null);
   }
 
   async run() {
@@ -145,11 +211,11 @@ export class PdfSign implements AfterViewInit {
       const targetW = 150;
       const ratio = png.width / png.height;
       const w = targetW, h = targetW / ratio;
-      const page = doc.getPage(this.page - 1);
+      const page = doc.getPage(this.page() - 1);
       const { width, height } = page.getSize();
       const m = 32;
       let x = width - w - m, y = m;
-      switch (this.pos) {
+      switch (this.pos()) {
         case 'bl': x = m; y = m; break;
         case 'br': x = width - w - m; y = m; break;
         case 'tl': x = m; y = height - h - m; break;

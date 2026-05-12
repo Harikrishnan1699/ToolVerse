@@ -43,6 +43,7 @@ export const TOOLS: Tool[] = [
   { id: 'unlock', name: 'Unlock PDF', desc: 'Remove permission restrictions from a PDF.', icon: '🔓', route: '/pdf/unlock', color: 'from-lime-500 to-emerald-600', category: 'pdf', group: 'security', status: 'live' },
   { id: 'sign', name: 'Sign PDF', desc: 'Draw your signature and stamp it onto a page.', icon: '✍', route: '/pdf/sign', color: 'from-pink-500 to-rose-600', category: 'pdf', group: 'security', status: 'live' },
   { id: 'redact', name: 'Redact PDF', desc: 'Permanently black out areas of a PDF.', icon: '█', route: '/pdf/redact', color: 'from-slate-700 to-slate-900', category: 'pdf', group: 'security', status: 'live' },
+  { id: 'protect', name: 'Protect PDF', desc: 'Add a password and permission restrictions to a PDF.', icon: '🔒', route: '/pdf/protect', color: 'from-rose-500 to-red-600', category: 'pdf', group: 'security', status: 'live' },
 
   // FINANCE
   { id: 'currency', name: 'Currency Converter', desc: 'Live exchange rates for 30+ world currencies.', icon: '$', route: '/currency', color: 'from-green-500 to-emerald-600', category: 'finance', status: 'live' },

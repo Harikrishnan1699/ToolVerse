@@ -15,7 +15,7 @@ import { PageHeader } from '../../shared/page-header/page-header';
       @if (!file()) {
         <app-dropzone title="Drop a PDF" subtitle="Single file" (files)="pick($event)" />
       } @else {
-        <div class="card p-6 space-y-5">
+        <div class="card p-6 space-y-5" data-no-drop>
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 grid place-items-center text-white font-bold">C</div>
             <div class="flex-1 min-w-0">
