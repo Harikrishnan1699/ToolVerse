@@ -127,6 +127,7 @@ export const routes: Routes = [
   { path: 'markdown-table', loadComponent: () => import('./pages/markdown-table/markdown-table').then(m => m.MarkdownTable), title: 'Markdown Table Builder — Toolverse' },
   { path: 'habit-tracker', loadComponent: () => import('./pages/habit-tracker/habit-tracker').then(m => m.HabitTracker), title: 'Habit Tracker — Toolverse' },
   { path: 'image/palette', loadComponent: () => import('./pages/image-palette/image-palette').then(m => m.ImagePalette), title: 'Color Palette Extractor — Toolverse' },
+  { path: 'resume-maker', loadComponent: () => import('./pages/resume-maker/resume-maker').then(m => m.ResumeMaker), title: 'Resume Maker — Toolverse' },
 
   { path: '**', redirectTo: '' },
 ];

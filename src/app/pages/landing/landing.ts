@@ -38,6 +38,7 @@ const QUICK_TOOLS: QuickTool[] = [
 ];
 
 const DAILY: Daily[] = [
+  { name: 'Resume Maker',    desc: 'Live preview, multiple templates, export as PDF — fully local.', icon: '📄', color: 'from-emerald-500 to-teal-600',  route: '/resume-maker' },
   { name: 'Screen Recorder', desc: 'Record tab, window or screen with mic — saves WebM locally.', icon: '🎥', color: 'from-rose-500 to-pink-600',    route: '/screen-recorder' },
   { name: 'API Tester',      desc: 'Mini-Postman. GET/POST/etc, headers, auth, history.',         icon: '⚡', color: 'from-amber-500 to-orange-600',  route: '/api-tester' },
   { name: 'Invoice Generator', desc: 'Branded invoices to PDF — no signup, no watermarks.',       icon: '🧾', color: 'from-emerald-500 to-green-600', route: '/invoice-generator' },
@@ -85,7 +86,6 @@ const DAILY: Daily[] = [
             <div class="mt-5 flex flex-wrap gap-2">
               <a routerLink="/pdf" class="btn-primary text-sm px-5 py-2.5">Browse PDF Tools</a>
               <a routerLink="/dev" class="btn-secondary text-sm px-5 py-2.5">Developer Tools</a>
-              <a routerLink="/typing-test" class="btn-secondary text-sm px-5 py-2.5">⌨ Typing Test</a>
             </div>
 
             <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400">

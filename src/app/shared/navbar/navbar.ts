@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../theme.service';
 
@@ -65,6 +66,7 @@ const GROUPS: Group[] = [
     { label: 'AI Writer',      route: '/ai-writer',             icon: '✍',  color: 'from-indigo-500 to-fuchsia-600',desc: 'Grammar + rewrite' },
     { label: 'Productivity',   route: '/productivity',          icon: '⏱', color: 'from-rose-500 to-orange-500',   desc: 'Pomodoro & more' },
     { label: 'Habit tracker',  route: '/habit-tracker',         icon: '🎯', color: 'from-emerald-500 to-teal-600',  desc: 'Build streaks' },
+    { label: 'Resume maker',   route: '/resume-maker',          icon: '📄', color: 'from-emerald-500 to-teal-600',  desc: 'Build & export resume' },
     { label: 'Invoice',        route: '/invoice-generator',     icon: '🧾', color: 'from-emerald-500 to-green-600', desc: 'PDF invoices' },
     { label: 'Timezone',       route: '/timezone-converter',    icon: '🌐', color: 'from-sky-500 to-indigo-600',    desc: 'Meeting planner' },
     { label: 'Email signature',route: '/email-signature',       icon: '✉',  color: 'from-sky-500 to-indigo-600',    desc: 'HTML signature' },
@@ -96,7 +98,7 @@ const GROUPS: Group[] = [
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, FormsModule],
   template: `
     <header class="sticky top-0 z-40 backdrop-blur-xl bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/60 dark:border-slate-800/60">
       <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -156,27 +158,90 @@ const GROUPS: Group[] = [
         </div>
       </nav>
 
-      @if (open()) {
-        <div class="md:hidden border-t border-slate-200 dark:border-slate-800 px-4 py-3 space-y-3 max-h-[70vh] overflow-y-auto">
-          @for (g of groups; track g.label) {
-            <details class="group/d">
-              <summary class="flex items-center justify-between cursor-pointer text-sm font-bold text-slate-700 dark:text-slate-200 py-2 px-1">
-                <span class="uppercase tracking-widest text-xs">{{ g.label }}</span>
-                <svg class="w-4 h-4 transition group-open/d:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-              </summary>
-              <div class="grid grid-cols-2 gap-1.5 pt-2 pb-3">
-                @for (item of g.items; track item.route) {
-                  <a [routerLink]="item.route" (click)="open.set(false)" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br {{ item.color }} grid place-items-center text-white text-sm shadow-sm shrink-0">{{ item.icon }}</div>
-                    <span class="text-xs font-semibold text-slate-900 dark:text-white truncate">{{ item.label }}</span>
+    </header>
+
+    <!-- MOBILE DRAWER -->
+    @if (open()) {
+      <div class="md:hidden fixed inset-0 z-50" (click)="closeDrawer()">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" style="animation: drawer-fade 0.2s ease-out both;"></div>
+
+        <!-- Drawer (right side) -->
+        <aside class="absolute top-0 right-0 h-full w-[85vw] max-w-[360px] bg-white dark:bg-slate-950 shadow-2xl flex flex-col"
+               style="animation: drawer-slide 0.25s ease-out both;"
+               (click)="$event.stopPropagation()">
+
+          <!-- Header -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 via-indigo-500 to-fuchsia-500 grid place-items-center text-white font-black text-sm">T</div>
+              <span class="font-display font-bold text-base">Toolverse</span>
+            </div>
+            <button (click)="closeDrawer()" class="w-9 h-9 grid place-items-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close menu">
+              <svg class="w-5 h-5 text-slate-700 dark:text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <!-- Search -->
+          <div class="px-3 py-3 border-b border-slate-200 dark:border-slate-800">
+            <div class="relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <input type="search"
+                     class="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-transparent focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 outline-none"
+                     placeholder="Search menu…"
+                     [(ngModel)]="search" />
+            </div>
+          </div>
+
+          <!-- Groups -->
+          <nav class="flex-1 overflow-y-auto px-2 py-2">
+            @if (search().trim()) {
+              <div class="space-y-0.5">
+                @for (item of searchResults(); track item.route) {
+                  <a [routerLink]="item.route" (click)="closeDrawer()"
+                     class="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <div class="w-7 h-7 rounded-md bg-gradient-to-br {{ item.color }} grid place-items-center text-white text-xs shadow-sm shrink-0">{{ item.icon }}</div>
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{{ item.label }}</span>
                   </a>
                 }
+                @if (searchResults().length === 0) {
+                  <div class="text-center py-8 text-sm text-slate-500">No tools match "{{ search() }}"</div>
+                }
               </div>
-            </details>
-          }
-        </div>
-      }
-    </header>
+            } @else {
+              @for (g of groups; track g.label) {
+                <div class="mb-1">
+                  <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                          (click)="toggleGroup(g.label)">
+                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ g.label }}</span>
+                    <svg class="w-4 h-4 text-slate-400 transition-transform"
+                         [class.rotate-180]="expanded() === g.label"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  @if (expanded() === g.label) {
+                    <div class="ml-2 mt-0.5 mb-1 pl-3 border-l-2 border-slate-200 dark:border-slate-800 space-y-0.5" style="animation: drawer-expand 0.2s ease-out both;">
+                      @for (item of g.items; track item.route) {
+                        <a [routerLink]="item.route" (click)="closeDrawer()"
+                           routerLinkActive="!bg-brand-50 dark:!bg-brand-950/60 !text-brand-700 dark:!text-brand-300"
+                           class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                          <div class="w-6 h-6 rounded-md bg-gradient-to-br {{ item.color }} grid place-items-center text-white text-[10px] shadow-sm shrink-0">{{ item.icon }}</div>
+                          <span class="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">{{ item.label }}</span>
+                        </a>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </nav>
+
+          <!-- Footer -->
+          <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 text-center">
+            100% client-side · No tracking
+          </div>
+        </aside>
+      </div>
+    }
   `,
   styles: [`
     @keyframes nav-pop {
@@ -187,6 +252,18 @@ const GROUPS: Group[] = [
       from { opacity: 0; transform: translateY(-4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    @keyframes drawer-fade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes drawer-slide {
+      from { transform: translateX(100%); }
+      to   { transform: translateX(0); }
+    }
+    @keyframes drawer-expand {
+      from { opacity: 0; max-height: 0; }
+      to   { opacity: 1; max-height: 1000px; }
+    }
     .nav-item { animation: nav-item-in 0.28s ease-out both; }
   `],
 })
@@ -194,5 +271,31 @@ export class Navbar {
   protected theme = inject(ThemeService);
   protected open = signal(false);
   protected hover = signal('');
+  protected expanded = signal('');
+  protected search = signal('');
   protected groups = GROUPS;
+
+  protected searchResults = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    if (!q) return [];
+    const out: Item[] = [];
+    for (const g of this.groups) {
+      for (const it of g.items) {
+        if (it.label.toLowerCase().includes(q) || (it.desc?.toLowerCase().includes(q) ?? false)) {
+          out.push(it);
+        }
+      }
+    }
+    return out.slice(0, 30);
+  });
+
+  toggleGroup(label: string) {
+    this.expanded.set(this.expanded() === label ? '' : label);
+  }
+
+  closeDrawer() {
+    this.open.set(false);
+    this.search.set('');
+    this.expanded.set('');
+  }
 }
